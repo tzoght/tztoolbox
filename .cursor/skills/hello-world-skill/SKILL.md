@@ -1,23 +1,20 @@
 ---
 name: hello-world-skill
-description: Minimal skeleton skill. Use when the user asks for a hello-world demo or wants to see how skills are structured. Replace with a real skill that describes when and how the agent should apply specialized knowledge.
+description: Minimal skeleton skill. Use when the user asks for a hello-world demo or wants to see how skills are structured.
 ---
 
 # Hello World Skill
 
-A minimal Cursor agent skill. Skills teach the agent how to perform specific tasks or apply domain knowledge.
-
-## When to use
-
-- User asks for a hello-world or skeleton example.
-- User wants to see how skills are structured.
+Minimal skeleton skill. Replace this with your real skill content.
 
 ## Instructions
 
-1. Acknowledge that the hello-world skill is active.
-2. Briefly explain what skills are (persistent instructions the agent can load).
-3. Offer to help with a real task or to create a new skill.
+1. Use this file as a template for new skills.
+2. Keep the YAML frontmatter (`name`, `description`).
+3. Write clear, concise instructions in the body.
+4. Add examples or reference files as needed.
 
-## Customizing
+## When to use
 
-Replace this file with your own skill: keep the YAML frontmatter (`name`, `description`) and write clear **Instructions** and **When to use** so the agent knows when to apply it.
+- User asks for a hello-world demo.
+- User wants to see how Cursor skills are structured.

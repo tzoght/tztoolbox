@@ -1,6 +1,7 @@
 # tztoolbox — Cursor goodies (commands, rules, skills)
 # Run: make help | make install
 
+SHELL := /bin/sh
 CURSOR_HOME := $(HOME)/.cursor
 REPO_CURSOR := .cursor
 
@@ -16,12 +17,26 @@ help:
 	@echo "After install, goodies are available in all Cursor projects. Re-run after git pull to update."
 
 # User skills go in ~/.cursor/skills/ (skills-cursor is reserved for Cursor built-ins)
+# Idempotent: skip copying if command/rule/skill already exists at destination.
 install:
 	@mkdir -p $(CURSOR_HOME)/commands $(CURSOR_HOME)/rules $(CURSOR_HOME)/skills
-	@cp $(REPO_CURSOR)/commands/*.md $(CURSOR_HOME)/commands/ 2>/dev/null || true
-	@cp $(REPO_CURSOR)/rules/* $(CURSOR_HOME)/rules/ 2>/dev/null || true
+	@for f in $(REPO_CURSOR)/commands/*.md; do \
+		if [ -f "$$f" ]; then \
+			dest="$(CURSOR_HOME)/commands/$$(basename "$$f")"; \
+			if [ ! -f "$$dest" ]; then cp "$$f" "$$dest"; fi; \
+		fi; \
+	done
+	@for f in $(REPO_CURSOR)/rules/*; do \
+		if [ -f "$$f" ]; then \
+			dest="$(CURSOR_HOME)/rules/$$(basename "$$f")"; \
+			if [ ! -f "$$dest" ]; then cp "$$f" "$$dest"; fi; \
+		fi; \
+	done
 	@for d in $(REPO_CURSOR)/skills/*/; do \
-		[ -d "$$d" ] && cp -r "$${d%/}" "$(CURSOR_HOME)/skills/"; \
+		if [ -d "$$d" ]; then \
+			name=$$(basename "$${d%/}"); \
+			if [ ! -d "$(CURSOR_HOME)/skills/$$name" ]; then cp -r "$${d%/}" "$(CURSOR_HOME)/skills/"; fi; \
+		fi; \
 	done
 	@echo "Installed commands -> $(CURSOR_HOME)/commands/"
 	@echo "Installed rules    -> $(CURSOR_HOME)/rules/"
