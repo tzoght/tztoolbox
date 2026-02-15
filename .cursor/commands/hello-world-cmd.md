@@ -1,4 +1,4 @@
-# Hello World
+# Hello World Cmd
 
 A minimal Cursor command. Replace this with your own prompt or workflow.
 

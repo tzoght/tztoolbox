@@ -1,5 +1,5 @@
 ---
-name: hello-world
+name: hello-world-skill
 description: Minimal skeleton skill. Use when the user asks for a hello-world demo or wants to see how skills are structured. Replace with a real skill that describes when and how the agent should apply specialized knowledge.
 ---
 
