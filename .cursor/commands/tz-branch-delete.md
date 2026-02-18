@@ -1,4 +1,4 @@
-# Delete Feature Branch
+# Delete Branch
 
 When the user invokes this command, run the following workflow to safely delete a feature branch both locally and remotely.
 
@@ -21,8 +21,13 @@ Ask the user: **"Which branch do you want to delete?"**
 
 Before deleting, perform the following:
 
-1. **Merged status**: Run `git branch --merged main` (or the default branch) to check if the selected branch has been fully merged. If **not merged**, warn the user: **"This branch has not been merged. Deleting it will lose unmerged commits."** Ask for explicit confirmation to proceed.
-2. **Open PR check**: If `gh` is available, run `gh pr list --head <branch> --json number,url,state` to check for open PRs. If an open PR exists, warn the user and show the PR URL. Ask whether to close the PR and continue, or abort.
+1. **Merged status** (check all three methods — if **any** indicates merged, treat the branch as merged):
+   - **Local git check**: Run `git branch --merged main` (or the default branch) to see if the branch tip is reachable from `main`.
+   - **Remote git check**: Run `git branch -r --merged origin/main` to see if the remote-tracking branch is merged (covers cases where local `main` is behind).
+   - **GitHub PR check**: If `gh` is available, run `gh pr list --head <branch> --state merged --json number,url` to check if any PR from this branch was merged (covers squash merges and rebase merges where commit SHAs differ).
+   - If **none** of the three methods indicate merged, warn the user: **"This branch has not been merged. Deleting it will lose unmerged commits."** Ask for explicit confirmation to proceed.
+   - If **any** method confirms merged, inform the user: **"This branch has been merged (via PR or directly)."** and proceed normally.
+2. **Open PR check**: If `gh` is available, run `gh pr list --head <branch> --state open --json number,url,state` to check for open (not yet merged) PRs. If an open PR exists, warn the user and show the PR URL. Ask whether to close the PR and continue, or abort.
 3. **Current branch conflict**: If the user is currently on the branch they want to delete, switch to the default branch first (`git checkout main` or `master`).
 
 ## 3. Delete the branch
