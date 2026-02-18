@@ -1,4 +1,4 @@
-# Stage, commit & PR
+# Publish Changes
 
 When the user invokes this command, run the following workflow.
 
