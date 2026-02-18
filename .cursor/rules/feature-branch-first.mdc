@@ -1,0 +1,12 @@
+---
+description: Feature Branch First
+alwaysApply: true
+---
+
+# Feature branch for the whole conversation
+
+When planning or starting work, create a feature branch **once at the start** so all edits in this conversation happen on that branch.
+
+1. Run `git branch --show-current`. If the branch is `main`, `master`, or the repo default, create and switch to a new branch (e.g. `feature/short-description`, `fix/issue-name`) with `git checkout -b <name>`.
+2. Do all requested planning and code changes on this branch for the rest of the conversation. Do not create another branch mid-conversation unless the user asks.
+3. If the user is already on a feature branch, stay on it and proceed without creating a new branch.
