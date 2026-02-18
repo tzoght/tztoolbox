@@ -35,7 +35,11 @@ Before deleting, perform the following:
 After the user confirms:
 
 1. **Delete locally**: Run `git branch -d <branch>` (safe delete). If the branch is not fully merged and the user confirmed in Step 2, use `git branch -D <branch>` (force delete).
-2. **Delete remotely**: Run `git push origin --delete <branch>`. If the remote branch doesn't exist, skip silently.
+2. **Delete remotely**:
+   - First, verify the remote branch has been merged into the remote default branch by running `git log origin/main --oneline --ancestry-path origin/<branch>..origin/main 2>/dev/null` or confirming via the GitHub PR check from Step 2.
+   - If the remote branch **is merged**: run `git push origin --delete <branch>`.
+   - If the remote branch **is not merged**: warn the user: **"The remote branch has not been merged into origin/main. Deleting it remotely will lose any pushed commits that haven't been merged."** Ask for explicit confirmation before proceeding.
+   - If the remote branch doesn't exist, skip silently.
 
 ## 4. Summary
 
