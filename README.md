@@ -11,9 +11,17 @@ Open this repo in Cursor:
 
 No install step needed when you’re working inside this repo.
 
+## Quick install (no clone needed)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tzoght/tztoolbox/main/install.sh | sh
+```
+
+This clones the repo into a temp directory, copies all commands, rules, and skills into `~/.cursor/`, and cleans up. Re-run anytime to update.
+
 ## Using in other projects
 
-To get the same goodies in every Cursor project (without opening this repo):
+If you already have a local clone, you can install with Make instead:
 
 ```bash
 make install
