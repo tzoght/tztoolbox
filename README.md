@@ -1,5 +1,8 @@
 # tztoolbox
 
+[![CI](https://github.com/tzoght/tztoolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/tzoght/tztoolbox/actions/workflows/ci.yml)
+[![Publish](https://github.com/tzoght/tztoolbox/actions/workflows/publish.yml/badge.svg)](https://github.com/tzoght/tztoolbox/actions/workflows/publish.yml)
+
 Useful prompts, shells, and tools collected over time. This repo holds Cursor **commands**, **rules**, and **skills** so you can reuse them everywhere.
 
 ## Using in this repo
