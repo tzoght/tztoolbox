@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggest_label_on_review: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_instructions:
+    - path: "install.sh"
+      instructions: >
+        This is the installer script. Ensure it is POSIX-compliant,
+        handles errors gracefully, and cleans up temp directories.
+    - path: ".cursor/commands/**"
+      instructions: >
+        These are Cursor command definitions in Markdown.
+        Check for clear step-by-step instructions that an AI agent can follow.
+    - path: ".cursor/rules/**"
+      instructions: >
+        These are Cursor rules (always-on AI guidance).
+        Verify they are well-structured and unambiguous.
+    - path: ".cursor/skills/**"
+      instructions: >
+        These are Cursor skill definitions.
+        Each skill directory must contain a SKILL.md with clear
+        trigger conditions and step-by-step instructions.
+    - path: "Makefile"
+      instructions: >
+        The Makefile must have standard targets: help, install, fmt,
+        lint, test, test-unit, test-integration, build, ci, clean.
+        Recipes should be thin wrappers delegating to real tooling.
+
+chat:
+  auto_reply: true

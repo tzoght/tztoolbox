@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/tzoght/tztoolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/tzoght/tztoolbox/actions/workflows/ci.yml)
 [![Publish](https://github.com/tzoght/tztoolbox/actions/workflows/publish.yml/badge.svg)](https://github.com/tzoght/tztoolbox/actions/workflows/publish.yml)
+[![CodeRabbit](https://img.shields.io/badge/CodeRabbit-AI%20Reviews-blue?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=)](https://coderabbit.ai)
 
 Useful prompts, shells, and tools collected over time. This repo holds Cursor **commands**, **rules**, and **skills** so you can reuse them everywhere.
 
@@ -49,6 +50,10 @@ Re-run after `git pull` to update your global copy. If Rules or Skills don’t s
 | Skill   | `.cursor/skills/<name>/`             | One directory per skill with a `SKILL.md` inside |
 
 Then commit, push, and run `make install` again to refresh the global copy.
+
+## Code reviews
+
+Pull requests are automatically reviewed by [CodeRabbit](https://coderabbit.ai). The configuration lives in [`.coderabbit.yaml`](.coderabbit.yaml). CodeRabbit needs to be installed as a GitHub App on the repository — see the [setup guide](https://docs.coderabbit.ai/platforms/github-com) if it isn't already.
 
 ## License
 
