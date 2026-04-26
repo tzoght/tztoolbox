@@ -1,70 +1,116 @@
 #!/bin/sh
-# tztoolbox installer
+# tztoolbox bootstrap installer.
+#
+# This script downloads the latest `tzcli` release binary and runs
+# `tzcli install` against the user's home directory. If a release binary
+# is unavailable for the host OS/arch, it falls back to building from
+# source with `go build` (requires Go to be installed).
+#
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/tzoght/tztoolbox/main/install.sh | sh
-#   — or —
-#   git clone https://github.com/tzoght/tztoolbox.git && cd tztoolbox && sh install.sh
-set -e
+#   curl -fsSL https://raw.githubusercontent.com/tzoght/tztoolbox/main/install.sh | sh -s -- --only cursor
+#   curl -fsSL https://raw.githubusercontent.com/tzoght/tztoolbox/main/install.sh | sh -s -- --no-prune
+#
+# All flags after `--` are forwarded verbatim to `tzcli install`.
 
-REPO_URL="https://github.com/tzoght/tztoolbox.git"
-CURSOR_HOME="${HOME}/.cursor"
-REPO_CURSOR=".cursor"
+set -eu
 
-cleanup() {
-  if [ -n "${TMPDIR_CREATED:-}" ] && [ -d "$TMPDIR_CREATED" ]; then
-    rm -rf "$TMPDIR_CREATED"
-  fi
+REPO="${TZTOOLBOX_REPO:-tzoght/tztoolbox}"
+INSTALL_DIR="${TZTOOLBOX_BIN_DIR:-${HOME}/.local/bin}"
+SOURCE_DIR_HINT="${TZTOOLBOX_SOURCE_DIR:-}"
+
+err() {
+  printf '%s\n' "$*" >&2
 }
-trap cleanup EXIT INT TERM
 
 need_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "Error: '$1' is required but not found." >&2
+    err "Error: required command not found: $1"
     exit 1
   fi
 }
 
-# Determine source directory: local clone or remote fetch
-if [ -d "$REPO_CURSOR/commands" ] && [ -d "$REPO_CURSOR/rules" ]; then
-  SRC="."
-  echo "Detected local clone — installing from working tree."
-else
+detect_platform() {
+  os=$(uname -s | tr '[:upper:]' '[:lower:]')
+  arch=$(uname -m)
+  case "$os" in
+    darwin | linux) ;;
+    *)
+      err "Unsupported OS: $os. Falling back to source build."
+      printf 'unsupported'
+      return
+      ;;
+  esac
+  case "$arch" in
+    x86_64 | amd64) arch=amd64 ;;
+    aarch64 | arm64) arch=arm64 ;;
+    *)
+      err "Unsupported arch: $arch. Falling back to source build."
+      printf 'unsupported'
+      return
+      ;;
+  esac
+  printf '%s_%s' "$os" "$arch"
+}
+
+download_release_binary() {
+  platform=$1
+  asset="tzcli_${platform}.tar.gz"
+  url="https://github.com/${REPO}/releases/latest/download/${asset}"
+  tmp=$(mktemp -d)
+  printf '==> Downloading %s\n' "$url"
+  if ! curl -fL --silent --show-error --output "${tmp}/${asset}" "$url"; then
+    rm -rf "$tmp"
+    return 1
+  fi
+  tar -xzf "${tmp}/${asset}" -C "$tmp"
+  mkdir -p "$INSTALL_DIR"
+  mv "${tmp}/tzcli" "${INSTALL_DIR}/tzcli"
+  chmod +x "${INSTALL_DIR}/tzcli"
+  rm -rf "$tmp"
+  printf '==> Installed tzcli to %s\n' "${INSTALL_DIR}/tzcli"
+  return 0
+}
+
+build_from_source() {
+  need_cmd go
   need_cmd git
-  TMPDIR_CREATED="$(mktemp -d)"
-  echo "Cloning tztoolbox into temp directory..."
-  git clone --depth 1 "$REPO_URL" "$TMPDIR_CREATED/tztoolbox" 2>&1 | sed 's/^/  /'
-  SRC="$TMPDIR_CREATED/tztoolbox"
-fi
+  if [ -n "$SOURCE_DIR_HINT" ] && [ -d "$SOURCE_DIR_HINT" ]; then
+    src="$SOURCE_DIR_HINT"
+  else
+    src=$(mktemp -d)
+    printf '==> Cloning %s\n' "$REPO"
+    git clone --depth 1 "https://github.com/${REPO}.git" "$src" >/dev/null 2>&1
+  fi
+  printf '==> Building tzcli from source in %s\n' "$src"
+  mkdir -p "$INSTALL_DIR"
+  ( cd "$src" && go build -o "${INSTALL_DIR}/tzcli" ./cmd/tzcli )
+  printf '==> Installed tzcli to %s\n' "${INSTALL_DIR}/tzcli"
+}
 
-mkdir -p "$CURSOR_HOME/commands" "$CURSOR_HOME/rules" "$CURSOR_HOME/skills"
+ensure_path() {
+  case ":${PATH:-}:" in
+    *":${INSTALL_DIR}:"*) ;;
+    *)
+      err "Note: ${INSTALL_DIR} is not on your PATH. Add it to your shell rc:"
+      err "  export PATH=\"${INSTALL_DIR}:\$PATH\""
+      ;;
+  esac
+}
 
-installed_commands=0
-installed_rules=0
-installed_skills=0
+main() {
+  need_cmd uname
+  need_cmd curl
+  need_cmd tar
 
-for f in "$SRC/$REPO_CURSOR"/commands/*.md; do
-  [ -f "$f" ] || continue
-  cp "$f" "$CURSOR_HOME/commands/$(basename "$f")"
-  installed_commands=$((installed_commands + 1))
-done
+  platform=$(detect_platform)
+  if [ "$platform" = unsupported ] || ! download_release_binary "$platform"; then
+    build_from_source
+  fi
 
-for f in "$SRC/$REPO_CURSOR"/rules/*; do
-  [ -f "$f" ] || continue
-  cp "$f" "$CURSOR_HOME/rules/$(basename "$f")"
-  installed_rules=$((installed_rules + 1))
-done
+  ensure_path
+  printf '==> Running: tzcli install %s\n' "$*"
+  "${INSTALL_DIR}/tzcli" install "$@"
+}
 
-for d in "$SRC/$REPO_CURSOR"/skills/*/; do
-  [ -d "$d" ] || continue
-  cp -r "${d%/}" "$CURSOR_HOME/skills/"
-  installed_skills=$((installed_skills + 1))
-done
-
-echo ""
-echo "tztoolbox installed successfully!"
-echo "  Commands : $installed_commands -> $CURSOR_HOME/commands/"
-echo "  Rules    : $installed_rules -> $CURSOR_HOME/rules/"
-echo "  Skills   : $installed_skills -> $CURSOR_HOME/skills/"
-echo ""
-echo "Goodies are now available in all Cursor projects."
-echo "If they don't appear in Cursor Settings, restart Cursor once."
+main "$@"

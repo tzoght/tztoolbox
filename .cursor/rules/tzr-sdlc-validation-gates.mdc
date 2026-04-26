@@ -1,7 +1,6 @@
 ---
 description: SDLC Validation Gates
 alwaysApply: true
-globs:
 ---
 
 # SDLC validation gates

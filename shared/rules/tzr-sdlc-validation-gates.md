@@ -1,0 +1,127 @@
+# SDLC validation gates
+
+This rule defines **when** to run validation during the software development lifecycle. It depends on:
+
+- **`tzr-makefile-standard-targets`** — defines the `make` targets available in every project.
+- **`tzr-feature-branch-first`** — ensures work happens on a feature branch.
+
+The three rules work together: branch first, code on the branch, validate at every gate, merge with confidence.
+
+## Prerequisites
+
+Before applying any gate, verify:
+
+1. A `Makefile` exists at the repo root. If not, follow `tzr-makefile-standard-targets` to create one first.
+2. The current branch is a feature branch (not a protected branch). If not, follow `tzr-feature-branch-first` to create one.
+
+---
+
+## Gate 1 — After scaffolding or initial setup
+
+**When:** A new project is created, or a major new module/package is added.
+
+**Run:**
+
+```
+make install   # if an install target exists
+make fmt
+make lint
+```
+
+**Why:** Catch misconfigurations, missing dependencies, and formatting drift before any real code is written.
+
+---
+
+## Gate 2 — During active development (before each commit)
+
+**When:** The agent is about to create a git commit.
+
+**Run:**
+
+```
+make fmt
+make lint
+```
+
+**Action on failure:**
+- Auto-fix what `fmt` corrects, stage the changes.
+- If `lint` fails, fix the reported issues before committing. Do not commit code that fails linting.
+
+---
+
+## Gate 3 — After a logical unit of work is complete
+
+**When:** A feature, bug fix, or refactor is functionally complete (all code changes are done, before opening a PR).
+
+**Run:**
+
+```
+make test
+```
+
+If `test-unit` and `test-integration` are both wired up, prefer running them individually so failures are easier to isolate:
+
+```
+make test-unit
+make test-integration
+```
+
+**Action on failure:**
+- Fix failing tests. If a test failure is caused by an intentional behavior change, update the test to match the new behavior and note this in the commit message.
+
+---
+
+## Gate 4 — Pre-PR (the full local CI pipeline)
+
+**When:** About to create a pull request or push the branch for review.
+
+**Run:**
+
+```
+make ci
+```
+
+This is the comprehensive gate — it runs `fmt`, `lint`, `test`, and `build` in sequence and fails fast on the first error.
+
+**Action on failure:**
+- Do **not** create the PR. Fix every failure, commit the fixes, and re-run `make ci` until it passes cleanly.
+- Once green, proceed with the PR.
+
+**Fallback:** If the project has no `ci` target yet, run these in order and stop on the first failure:
+
+```
+make fmt && make lint && make test && make build
+```
+
+---
+
+## Gate 5 — Post-merge housekeeping (optional)
+
+**When:** After a PR is merged, if the agent is continuing work in the same session.
+
+**Run:**
+
+```
+make clean
+make install   # refresh dependencies in case they changed
+make test      # sanity check on the updated main branch
+```
+
+---
+
+## Summary of gates
+
+| Gate | Trigger | Targets | Block on failure? |
+|------|---------|---------|-------------------|
+| 1 — Setup | New project / module | `install`, `fmt`, `lint` | No — fix and continue |
+| 2 — Pre-commit | Before each `git commit` | `fmt`, `lint` | Yes — fix before committing |
+| 3 — Work complete | Feature/fix done | `test` (or `test-unit` + `test-integration`) | Yes — fix before PR |
+| 4 — Pre-PR | Before `gh pr create` | `ci` | Yes — fix before creating PR |
+| 5 — Post-merge | After merge, same session | `clean`, `install`, `test` | No — informational |
+
+## Behavior notes
+
+- **Do not skip gates.** If a target does not exist yet, suggest adding it per `tzr-makefile-standard-targets` rather than silently skipping.
+- **Report results clearly.** After running each gate, summarize what passed and what failed so the user has full visibility.
+- **Fail forward.** At non-blocking gates (1 and 5), log issues and continue. At blocking gates (2, 3, 4), stop and fix before proceeding.
+- **Respect the user.** If the user explicitly says to skip validation (e.g., "commit without linting"), comply but warn them that the gate was skipped.
