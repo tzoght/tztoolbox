@@ -353,7 +353,7 @@ func (d paletteDelegate) Render(w io.Writer, m list.Model, index int, item list.
 	}
 	title := d.chrome.PromptCmd.Render(it.command)
 	desc := d.chrome.Footer.Render(it.desc)
-	fmt.Fprintf(w, "%s%s\n  %s\n", prefix, title, desc)
+	_, _ = fmt.Fprintf(w, "%s%s\n  %s\n", prefix, title, desc)
 }
 
 // builtinPaletteItems is the static minimum the palette ships before the

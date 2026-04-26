@@ -25,35 +25,35 @@ func NewText(w io.Writer) Renderer {
 }
 
 func (r *textRenderer) Heading(s string) {
-	fmt.Fprintln(r.w, s)
+	_, _ = fmt.Fprintln(r.w, s)
 }
 
 func (r *textRenderer) Note(s string) {
-	fmt.Fprintln(r.w, s)
+	_, _ = fmt.Fprintln(r.w, s)
 }
 
 func (r *textRenderer) Warn(s string) {
-	fmt.Fprintln(r.w, s)
+	_, _ = fmt.Fprintln(r.w, s)
 }
 
 func (r *textRenderer) Errorf(format string, a ...any) {
-	fmt.Fprintf(r.w, format, a...)
+	_, _ = fmt.Fprintf(r.w, format, a...)
 	if !strings.HasSuffix(format, "\n") {
-		fmt.Fprintln(r.w)
+		_, _ = fmt.Fprintln(r.w)
 	}
 }
 
 func (r *textRenderer) Table(headers []string, rows [][]Cell) {
 	tw := tabwriter.NewWriter(r.w, 0, 0, 2, ' ', 0)
 	if len(headers) > 0 {
-		fmt.Fprintln(tw, strings.Join(headers, "\t"))
+		_, _ = fmt.Fprintln(tw, strings.Join(headers, "\t"))
 	}
 	for _, row := range rows {
 		parts := make([]string, len(row))
 		for i, c := range row {
 			parts[i] = c.Text
 		}
-		fmt.Fprintln(tw, strings.Join(parts, "\t"))
+		_, _ = fmt.Fprintln(tw, strings.Join(parts, "\t"))
 	}
 	_ = tw.Flush()
 }
@@ -61,13 +61,13 @@ func (r *textRenderer) Table(headers []string, rows [][]Cell) {
 func (r *textRenderer) KeyValues(pairs ...KV) {
 	tw := tabwriter.NewWriter(r.w, 0, 0, 2, ' ', 0)
 	for _, p := range pairs {
-		fmt.Fprintf(tw, "%s:\t%s\n", p.Key, p.Value)
+		_, _ = fmt.Fprintf(tw, "%s:\t%s\n", p.Key, p.Value)
 	}
 	_ = tw.Flush()
 }
 
 func (r *textRenderer) Raw(s string) {
-	fmt.Fprint(r.w, s)
+	_, _ = fmt.Fprint(r.w, s)
 }
 
 func (r *textRenderer) Flush() {}

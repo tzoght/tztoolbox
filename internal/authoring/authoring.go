@@ -374,7 +374,7 @@ func writeFromTemplate(dst, tmplPath string, data any) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return t.Execute(f, data)
 }
 

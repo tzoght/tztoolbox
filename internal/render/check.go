@@ -53,7 +53,7 @@ func CheckDrift(root string, tools []model.Tool) (DriftReport, error) {
 	if err != nil {
 		return DriftReport{}, fmt.Errorf("mktemp: %w", err)
 	}
-	defer os.RemoveAll(tmp)
+	defer func() { _ = os.RemoveAll(tmp) }()
 
 	// Mirror the layout: copy shared/ + overrides/ into tmp, then render
 	// into tmp so the tool dirs land there.

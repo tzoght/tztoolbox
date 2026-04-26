@@ -78,7 +78,7 @@ func renderStartupMenu(chrome *chromeStyles, version string) string {
 		Foreground(lipgloss.AdaptiveColor{Light: "#7c3aed", Dark: "#c4b5fd"})
 	cmdStyle := lipgloss.NewStyle().Bold(true).
 		Foreground(lipgloss.AdaptiveColor{Light: "#1f3a5f", Dark: "#7dd3fc"})
-	descStyle := chrome.Footer.Copy().Padding(0)
+	descStyle := chrome.Footer.Padding(0)
 	titleStyle := lipgloss.NewStyle().Bold(true).
 		Foreground(lipgloss.AdaptiveColor{Light: "#0f172a", Dark: "#f8fafc"})
 
@@ -104,7 +104,7 @@ func renderStartupMenu(chrome *chromeStyles, version string) string {
 		key := keyStyle.Render(fmt.Sprintf("[%s]", padRight(mn.Key, keyW)))
 		cmd := cmdStyle.Render(padRight(mn.Cmd, cmdW))
 		desc := descStyle.Render(mn.Desc)
-		sb.WriteString(fmt.Sprintf("  %s  %s   %s\n", key, cmd, desc))
+		fmt.Fprintf(&sb, "  %s  %s   %s\n", key, cmd, desc)
 	}
 
 	sb.WriteString("\n")

@@ -86,21 +86,21 @@ func (r *lipRenderer) styleFor(s Style) lipgloss.Style {
 }
 
 func (r *lipRenderer) Heading(s string) {
-	fmt.Fprintln(r.w, r.st.Heading.Render(s))
+	_, _ = fmt.Fprintln(r.w, r.st.Heading.Render(s))
 }
 
 func (r *lipRenderer) Note(s string) {
-	fmt.Fprintln(r.w, r.st.Note.Render(s))
+	_, _ = fmt.Fprintln(r.w, r.st.Note.Render(s))
 }
 
 func (r *lipRenderer) Warn(s string) {
-	fmt.Fprintln(r.w, r.st.Warn.Render("warn: "+s))
+	_, _ = fmt.Fprintln(r.w, r.st.Warn.Render("warn: "+s))
 }
 
 func (r *lipRenderer) Errorf(format string, a ...any) {
 	msg := fmt.Sprintf(format, a...)
 	msg = strings.TrimRight(msg, "\n")
-	fmt.Fprintln(r.w, r.st.Error.Render("error: "+msg))
+	_, _ = fmt.Fprintln(r.w, r.st.Error.Render("error: "+msg))
 }
 
 // Table renders a bordered table. We compute column widths from the widest
@@ -181,7 +181,7 @@ func (r *lipRenderer) Table(headers []string, rows [][]Cell) {
 	sb.WriteString(r.borderLine(widths, "└", "┴", "┘"))
 	sb.WriteByte('\n')
 
-	fmt.Fprint(r.w, sb.String())
+	_, _ = fmt.Fprint(r.w, sb.String())
 }
 
 // borderLine builds a horizontal box-drawing border with the given junction
@@ -216,12 +216,12 @@ func (r *lipRenderer) KeyValues(pairs ...KV) {
 		if p.Style != StyleDefault {
 			val = r.styleFor(p.Style).Render(p.Value)
 		}
-		fmt.Fprintf(r.w, "%s  %s\n", key, val)
+		_, _ = fmt.Fprintf(r.w, "%s  %s\n", key, val)
 	}
 }
 
 func (r *lipRenderer) Raw(s string) {
-	fmt.Fprint(r.w, s)
+	_, _ = fmt.Fprint(r.w, s)
 }
 
 func (r *lipRenderer) Flush() {}

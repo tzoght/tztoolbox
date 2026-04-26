@@ -263,8 +263,5 @@ type runStartedMsg struct{ line string }
 // busyClearMsg resets the busy state when the command finishes.
 type busyClearMsg struct{}
 
-// quitMsg makes the program exit after history is saved.
-type quitMsg struct{}
-
 // keep time imported; we use it in dispatch.go and tests.
 var _ = time.Now

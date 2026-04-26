@@ -16,15 +16,6 @@ func runesPress(s string) tea.KeyMsg {
 	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(s)}
 }
 
-// drainCmd discards a tea.Cmd's resulting message, useful when we just want
-// to cause a side-effect.
-func drainCmd(c tea.Cmd) {
-	if c == nil {
-		return
-	}
-	_ = c()
-}
-
 func TestUpdateWindowSizeLaysOutChildren(t *testing.T) {
 	m := NewModel(Options{Factory: makeFactory(&strings.Builder{})})
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
