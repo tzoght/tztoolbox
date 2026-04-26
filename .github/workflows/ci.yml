@@ -2,16 +2,33 @@ name: CI
 on:
   pull_request:
     branches: [main]
+
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Install shellcheck
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          curl -sS https://webi.sh/shfmt | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Run CI pipeline
         run: make ci
+
+      - name: Verify sync is committed
+        run: |
+          ./bin/tzcli sync --check

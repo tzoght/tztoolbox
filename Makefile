@@ -1,123 +1,113 @@
-# tztoolbox — Cursor goodies (commands, rules, skills)
-# Run: make help | make install
+# tztoolbox — Cursor / Claude Code / OpenAI Codex artifact toolbox.
+# All real work lives in the `tzcli` Go binary; this Makefile is a thin
+# wrapper that satisfies workspace SDLC rules and provides language-
+# agnostic targets.
+#
+# Run: make help
 
-SHELL      := /bin/sh
-CURSOR_HOME := $(HOME)/.cursor
-REPO_CURSOR := .cursor
+SHELL := /bin/sh
 
+GO         ?= go
+GOFMT      ?= gofmt
+GOLANGCI   ?= golangci-lint
 SHELLCHECK ?= shellcheck
-SHFMT      ?= shfmt
 
+BIN_DIR    := bin
+TZCLI      := $(BIN_DIR)/tzcli
+PKG        := ./...
 SHELL_SCRIPTS := install.sh
+
+# Inject version metadata at build time.
+VERSION ?= dev
+COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
+DATE    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.Date=$(DATE)"
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install fmt lint test test-unit test-integration build ci clean check
+.PHONY: help build install sync doctor fmt lint test test-unit test-integration ci check clean dev tzcli
 
 # ---------------------------------------------------------------------------
 # Help
 # ---------------------------------------------------------------------------
 help:
-	@echo "tztoolbox — Cursor commands, rules, and skills"
+	@echo "tztoolbox — multi-tool (Cursor, Claude Code, Codex CLI) artifact toolbox"
 	@echo ""
-	@echo "Targets:"
-	@echo "  make install          Copy commands, rules, and skills into $(CURSOR_HOME)"
-	@echo "  make fmt              Auto-format shell scripts (shfmt)"
-	@echo "  make lint             Lint shell scripts (shellcheck)"
-	@echo "  make test             Run all tests"
-	@echo "  make test-unit        Run unit tests (script syntax check)"
-	@echo "  make test-integration Run integration tests (dry-run install)"
-	@echo "  make build            No-op (nothing to compile)"
-	@echo "  make ci               Run full CI pipeline: fmt, lint, test, build"
-	@echo "  make clean            Remove generated artifacts"
-	@echo "  make check            Alias for ci"
-	@echo "  make help             Show this help"
+	@echo "Lifecycle:"
+	@echo "  make build              Build $(TZCLI)"
+	@echo "  make sync               Render shared/ + overrides/ into .cursor, .claude, .codex"
+	@echo "  make install            Install rendered trees into ~/.cursor, ~/.claude, ~/.codex"
+	@echo "  make doctor             Print environment + drift report"
+	@echo ""
+	@echo "Validation:"
+	@echo "  make fmt                gofmt -w; goimports if available"
+	@echo "  make lint               golangci-lint + shellcheck install.sh + tzcli validate"
+	@echo "  make test               Run unit + integration tests"
+	@echo "  make test-unit          Unit tests only"
+	@echo "  make test-integration   Integration tests (build tag: integration)"
+	@echo "  make ci                 fmt -> lint -> test -> build (fail fast)"
+	@echo "  make check              Alias for ci"
+	@echo "  make clean              Remove $(BIN_DIR) and generated trees"
 
 # ---------------------------------------------------------------------------
-# Install
+# Build / lifecycle
 # ---------------------------------------------------------------------------
-# Always overwrites existing files so updates from git pull are picked up.
-install:
-	@mkdir -p $(CURSOR_HOME)/commands $(CURSOR_HOME)/rules $(CURSOR_HOME)/skills
-	@for f in $(REPO_CURSOR)/commands/*.md; do \
-		if [ -f "$$f" ]; then \
-			cp "$$f" "$(CURSOR_HOME)/commands/$$(basename "$$f")"; \
-		fi; \
-	done
-	@for f in $(REPO_CURSOR)/rules/*; do \
-		if [ -f "$$f" ]; then \
-			cp "$$f" "$(CURSOR_HOME)/rules/$$(basename "$$f")"; \
-		fi; \
-	done
-	@for d in $(REPO_CURSOR)/skills/*/; do \
-		if [ -d "$$d" ]; then \
-			cp -r "$${d%/}" "$(CURSOR_HOME)/skills/"; \
-		fi; \
-	done
-	@echo "Installed commands -> $(CURSOR_HOME)/commands/"
-	@echo "Installed rules    -> $(CURSOR_HOME)/rules/"
-	@echo "Installed skills   -> $(CURSOR_HOME)/skills/"
+$(TZCLI): $(shell find cmd internal -name '*.go' 2>/dev/null) go.mod go.sum
+	@mkdir -p $(BIN_DIR)
+	$(GO) build $(LDFLAGS) -o $(TZCLI) ./cmd/tzcli
+
+build: $(TZCLI)
+
+tzcli: $(TZCLI)
+
+sync: $(TZCLI)
+	$(TZCLI) sync
+
+install: $(TZCLI)
+	$(TZCLI) install
+
+doctor: $(TZCLI)
+	$(TZCLI) doctor
+
+dev: $(TZCLI)
+	$(TZCLI) sync --check
 
 # ---------------------------------------------------------------------------
-# Format
+# Format / lint / test
 # ---------------------------------------------------------------------------
 fmt:
-	@if command -v $(SHFMT) >/dev/null 2>&1; then \
-		echo "Formatting shell scripts..."; \
-		$(SHFMT) -w -i 2 -ci $(SHELL_SCRIPTS); \
-	else \
-		echo "shfmt not found — skipping format (install: https://github.com/mvdan/sh)"; \
+	$(GOFMT) -w cmd internal
+	@if command -v shfmt >/dev/null 2>&1; then \
+		shfmt -w -i 2 -ci $(SHELL_SCRIPTS); \
 	fi
 
-# ---------------------------------------------------------------------------
-# Lint
-# ---------------------------------------------------------------------------
-lint:
+lint: $(TZCLI)
+	@if command -v $(GOLANGCI) >/dev/null 2>&1; then \
+		$(GOLANGCI) run; \
+	else \
+		echo "golangci-lint not installed; running 'go vet' as a fallback"; \
+		$(GO) vet $(PKG); \
+	fi
 	@if command -v $(SHELLCHECK) >/dev/null 2>&1; then \
-		echo "Linting shell scripts..."; \
 		$(SHELLCHECK) $(SHELL_SCRIPTS); \
 	else \
-		echo "shellcheck not found — skipping lint (install: https://github.com/koalaman/shellcheck)"; \
+		echo "shellcheck not installed; skipping shell lint"; \
 	fi
+	$(TZCLI) validate
 
-# ---------------------------------------------------------------------------
-# Test
-# ---------------------------------------------------------------------------
 test: test-unit test-integration
 
 test-unit:
-	@echo "Running unit tests (syntax check)..."
-	@for f in $(SHELL_SCRIPTS); do \
-		sh -n "$$f" && echo "  $$f — OK"; \
-	done
+	$(GO) test -short $(PKG)
 
-test-integration:
-	@echo "Running integration tests (dry-run install)..."
-	@tmpdir=$$(mktemp -d) && \
-		HOME="$$tmpdir" sh install.sh && \
-		echo "  Verifying installed files..." && \
-		test -d "$$tmpdir/.cursor/commands" && echo "  commands/ — OK" && \
-		test -d "$$tmpdir/.cursor/rules"    && echo "  rules/    — OK" && \
-		rm -rf "$$tmpdir" && \
-		echo "  Integration test passed."
+test-integration: $(TZCLI)
+	$(GO) test -tags=integration $(PKG)
 
-# ---------------------------------------------------------------------------
-# Build
-# ---------------------------------------------------------------------------
-build:
-	@echo "Nothing to compile — content-only project."
-
-# ---------------------------------------------------------------------------
-# CI
-# ---------------------------------------------------------------------------
 ci: fmt lint test build
 	@echo ""
 	@echo "CI passed."
 
 check: ci
 
-# ---------------------------------------------------------------------------
-# Clean
-# ---------------------------------------------------------------------------
 clean:
-	@echo "Nothing to clean."
+	rm -rf $(BIN_DIR)

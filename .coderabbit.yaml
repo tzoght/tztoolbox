@@ -24,26 +24,49 @@ reviews:
   path_instructions:
     - path: "install.sh"
       instructions: >
-        This is the installer script. Ensure it is POSIX-compliant,
-        handles errors gracefully, and cleans up temp directories.
-    - path: ".cursor/commands/**"
+        Bootstrap installer. Must be POSIX-compliant (`/bin/sh`),
+        handle download/build failures gracefully, clean up temp dirs,
+        and forward any extra args verbatim to `tzcli install`.
+    - path: "cmd/tzcli/**"
       instructions: >
-        These are Cursor command definitions in Markdown.
-        Check for clear step-by-step instructions that an AI agent can follow.
-    - path: ".cursor/rules/**"
+        Cobra entrypoint and subcommand wiring for the tzcli binary.
+        Keep handlers thin: parse flags, resolve the repo root, delegate to
+        an internal package, format the result. Avoid business logic here.
+    - path: "internal/**"
       instructions: >
-        These are Cursor rules (always-on AI guidance).
-        Verify they are well-structured and unambiguous.
-    - path: ".cursor/skills/**"
+        Pure-Go business logic for tzcli. Prefer dependency injection over
+        global state. Functions that touch the filesystem must be safe to
+        run repeatedly (idempotent); functions that touch the network must
+        be optional and best-effort.
+    - path: "shared/commands/**"
       instructions: >
-        These are Cursor skill definitions.
-        Each skill directory must contain a SKILL.md with clear
-        trigger conditions and step-by-step instructions.
+        Slash-command playbooks. One Markdown file per command, with a
+        single H1 (used as the human-readable title). Steps must be
+        unambiguous so an AI agent can follow them.
+    - path: "shared/rules/**"
+      instructions: >
+        Always-on guidance. Markdown only — no Cursor frontmatter here
+        (that lives in overrides/cursor/rules/<name>.frontmatter.yaml).
+        Each rule should have a single H1 title.
+    - path: "shared/skills/**"
+      instructions: >
+        Agent Skills. Each skill directory must contain a SKILL.md with
+        YAML frontmatter (`name`, `description` ≤200 chars, third-person
+        phrasing). Supporting files may live in references/ and scripts/.
+    - path: "overrides/**"
+      instructions: >
+        Per-tool overrides. cursor/rules/<name>.frontmatter.yaml carries
+        Cursor-specific scoping. <tool>/disabled.yaml lists artifact names
+        that should NOT render for that tool.
     - path: "Makefile"
       instructions: >
-        The Makefile must have standard targets: help, install, fmt,
-        lint, test, test-unit, test-integration, build, ci, clean.
-        Recipes should be thin wrappers delegating to real tooling.
+        Must have standard targets: help, build, sync, install, doctor,
+        fmt, lint, test, test-unit, test-integration, ci, check, clean.
+        Recipes are thin wrappers around `tzcli` and Go tooling.
+    - path: ".github/workflows/**"
+      instructions: >
+        CI/Publish pipelines. CI must run `make ci`. Publish must build
+        cross-platform tzcli binaries and upload them as release assets.
 
 chat:
   auto_reply: true

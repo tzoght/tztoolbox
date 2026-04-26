@@ -2,35 +2,85 @@ name: Publish
 on:
   push:
     branches: [main]
+
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Install shellcheck
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          curl -sS https://webi.sh/shfmt | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Run CI pipeline
         run: make ci
 
-  publish:
+  release:
     needs: ci
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
       - name: Generate version tag
         id: version
         run: |
           TAG="v$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Cross-compile tzcli binaries
+        env:
+          VERSION: ${{ steps.version.outputs.tag }}
+        run: |
+          set -eu
+          mkdir -p dist
+          COMMIT="$(git rev-parse --short HEAD)"
+          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          LDFLAGS="-X main.Version=${VERSION} -X main.Commit=${COMMIT} -X main.Date=${DATE}"
+          for target in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
+            os="${target%%_*}"
+            arch="${target##*_}"
+            echo "==> Building tzcli_${target}"
+            mkdir -p "dist/${target}"
+            GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 \
+              go build -trimpath -ldflags "$LDFLAGS" \
+              -o "dist/${target}/tzcli" ./cmd/tzcli
+            tar -czf "dist/tzcli_${target}.tar.gz" -C "dist/${target}" tzcli
+          done
+          ( cd dist && sha256sum tzcli_*.tar.gz > checksums.txt )
+
+      - name: Package shared/ for ChatGPT/Claude.ai consumers
+        run: |
+          zip -r dist/shared.zip shared
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
+          files: |
+            dist/tzcli_*.tar.gz
+            dist/checksums.txt
+            dist/shared.zip
