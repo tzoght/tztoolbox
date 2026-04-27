@@ -12,13 +12,14 @@ Run all three checks **in parallel** (they are independent):
 
 ## 1. Files to stage
 
-Using the `git status` output already captured in Step 0, present the changed/untracked files as a numbered list.
+Using the `git status` output already captured in Step 0, build the list of changed/untracked paths that are candidates for staging (each line of short status corresponds to one path, except resolve renames as the single logical change Git reports).
 
-Ask the user: **"Which files do you want to add to staging?"**
+- **If there is exactly one candidate path**: do **not** ask for a choice. Tell the user clearly, e.g. **"Only `<path>` has unstaged/untracked changes — staging it."** Then run `git add -- <path>` (or the appropriate `git add` for that line type). Skip the numbered list and the selection question.
+- **If there are two or more candidates**: present them as a numbered list and ask the user: **"Which files do you want to add to staging?"**
+  - Accept one or more numbers from the list, specific paths (e.g. `src/foo.ts`, `docs/readme.md`), or **"all"** for everything.
+  - Run `git add <paths>` or `git add -A` if they said all.
 
-- Accept one or more numbers from the list, specific paths (e.g. `src/foo.ts`, `docs/readme.md`), or **"all"** for everything.
-- Run `git add <paths>` or `git add -A` if they said all.
-- Show a brief post-add `git status --short` so they can verify what is staged.
+In all cases, show a brief post-add `git status --short` so they can verify what is staged.
 
 ## 2. Commit and push
 

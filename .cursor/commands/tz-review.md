@@ -33,10 +33,10 @@ Show the user a summary:
 
 Then list the commits (short hash + message) and the diffstat.
 
-Ask the user: **"Review all commits, or select specific ones?"** (all / pick)
-
-- **all** → proceed with the full diff.
-- **pick** → show the commit list as numbered entries, let the user select one or more. Recompute the diff to include only the selected commits (`git diff <commit>^ <commit>` for each, or a range).
+- **If there is exactly one commit** in the list (relative to `<base-branch>`): do **not** ask all vs pick. Tell the user clearly, e.g. **"Only one commit on this branch — reviewing that commit."** Proceed with the full diff already computed (`<base-branch>...HEAD`).
+- **If there are two or more commits**: ask the user: **"Review all commits, or select specific ones?"** (all / pick)
+  - **all** → proceed with the full diff.
+  - **pick** → show the commit list as numbered entries, let the user select one or more. Recompute the diff to include only the selected commits (`git diff <commit>^ <commit>` for each, or a range).
 
 ## 2. Multi-model review
 

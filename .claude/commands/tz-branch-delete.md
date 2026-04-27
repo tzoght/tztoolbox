@@ -13,11 +13,12 @@ Run all four commands **in parallel** (they are independent). Having the branch 
 
 ## 1. Select the branch to delete
 
-Ask the user: **"Which branch do you want to delete?"**
+From the branch list already retrieved in Step 0, exclude `main`, `master`, `develop`, `staging`, `release/*`, and `production`.
 
-- From the branch list already retrieved in Step 0, exclude `main`, `master`, `develop`, `staging`, `release/*`, and `production`.
-- Present the remaining branches as a numbered list so the user can pick by number or type a name.
-- If the user provides a branch name directly, use it.
+- **If exactly one branch remains** after that filter: do **not** ask which branch. Tell the user clearly, e.g. **"Only `<branch>` is eligible to delete — proceeding with that branch."** Then use that branch for the rest of the workflow.
+- **If two or more branches remain**: ask the user: **"Which branch do you want to delete?"** Present the remaining branches as a numbered list so the user can pick by number or type a name.
+- **If none remain**: stop and explain that every local branch is protected or there are no feature branches to delete.
+- If the user provides a branch name directly (when you did prompt), use it.
 - **Refuse to delete protected branches.** If the user picks one, warn them and ask again.
 
 ## 2. Safety checks
