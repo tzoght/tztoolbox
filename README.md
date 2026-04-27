@@ -101,7 +101,7 @@ History is stored at `${TZCLI_HISTORY_FILE}` if set, otherwise `${XDG_CONFIG_HOM
 
 Once `tzcli install` has populated `~/.cursor/commands/` and `~/.cursor/skills/`, the same `tz-*` slash commands and Skills are usable from a terminal via the [Cursor CLI](https://cursor.com/docs/cli/installation) — no IDE required.
 
-Install and authenticate the CLI once:
+Install and authenticate the CLI *once*:
 
 ```bash
 curl https://cursor.com/install -fsS | bash   # installs `agent` (alias: `cursor-agent`)
