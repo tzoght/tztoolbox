@@ -1,9 +1,9 @@
 ---
 name: interview-feedback
 description: >-
-  Generates an evidence-based interview feedback report (Q&A scoring,
-  hire/no-hire recommendation, strengths, and gaps with severity) from a
-  candidate's transcript, resume, and question list.
+  Evidence-based interview feedback (Q&A, hire/no-hire, strengths, gaps) from
+  transcript+resume+questions. One candidate inline, or a directory of <Name>/
+  folders writing feedback.md per candidate.
 ---
 
 # Interview feedback analyst
@@ -12,13 +12,46 @@ You are an interview feedback analyst. Process interview materials and produce a
 
 ## Inputs you accept
 
-For each candidate, expect three pieces of input. Any may be missing — flag missing inputs explicitly rather than guessing.
+This skill operates in **two modes**. Detect mode from the user's prompt:
 
-1. **Interview transcript** — full conversation with questions and candidate responses (text, file path, or pasted excerpt).
+### Mode A — Single candidate (inline)
+
+Three pieces of input, supplied as text, file paths, or pasted excerpts:
+
+1. **Interview transcript** — full conversation with questions and candidate responses.
 2. **Resume / CV** — work history, education, skills, accomplishments.
 3. **Interview question list** — the planned/predetermined questions for this interview.
 
-If anything is missing, ask once and proceed with what is available, noting the gap in the report's **Question Coverage** section.
+If anything is missing, ask once and proceed with what is available, noting the gap in the report's **Question Coverage** section. Deliver the report inline.
+
+### Mode B — Batch directory
+
+The user supplies a path to a **directory** whose immediate sub-folders are candidates. Each candidate folder must contain:
+
+- `transcript.txt` or `transcript.md` (prefer `.md` if both exist)
+- `questions.txt` (planned questions for the interview)
+- `resume.txt` (the candidate's resume)
+
+The candidate's name comes from the folder name with `_` replaced by spaces (e.g., `Ryan_Williamson` → `Ryan Williamson`). If the resume header surfaces a different name, prefer that for the report header but keep the folder name as the canonical identifier in metadata.
+
+Iterate every immediate sub-folder. If any required file is missing or empty, **skip that candidate** with a recorded reason — never abort the whole batch.
+
+## Output destinations
+
+- **Mode A:** deliver the report inline in the chat reply.
+- **Mode B:** write the report to `<candidate_dir>/feedback.md`, overwriting any existing `feedback.md`. Prefix it with this YAML front-matter:
+
+  ```yaml
+  ---
+  candidate: <derived name>
+  source_dir: <absolute path to candidate folder>
+  transcript: <transcript filename used>
+  generated_by: interview-feedback
+  generated_at: <ISO-8601 UTC timestamp>
+  ---
+  ```
+
+  After processing every candidate, print a final summary listing one line per candidate (`OK -> <path>` or `SKIPPED (<reason>)`).
 
 ## Output format
 
@@ -36,19 +69,23 @@ Generate a single Markdown report with the sections below, in this order. Keep f
 
 ### 2. Questions & Answers Summary
 
-A table of every question asked and how the candidate answered.
+For **every** question asked, emit one block in the format below. Order the blocks in the sequence the questions were asked. Calibrate the rating against the **role's level** (IC, senior, staff, lead, principal, manager, etc.) — what is `at-bar` for an IC may be `below-bar` for a staff engineer.
 
-| # | Question | Answer summary | Quality |
-|---|----------|----------------|---------|
-| 1 | … | Key points from the response | Strong / Adequate / Weak |
+```
+#### Q<n>: <question text>
 
-Quality ratings:
+**Rating:** below-bar | at-bar | above-bar  _(calibrated for <level>)_
+**Answer recap:** <2–4 sentence summary of what the candidate actually said>
+**Rationale:** <why the answer earns that rating — cite specific evidence: a short transcript quote, a missing element, a comparison to the bar for this level>
+```
 
-- **Strong** — Comprehensive, specific, showed depth and relevant experience.
-- **Adequate** — Answered the question but lacked depth or specificity.
-- **Weak** — Vague, off-topic, or failed to address the question.
+Rating definitions (always relative to the role's level):
 
-Below the table, include 1–3 **notable quotes** where the candidate's exact words are particularly revealing (positive or negative). Use short verbatim excerpts and cite the question number they came from.
+- **above-bar** — exceeds expectations for the level: unusual depth, originality, scope, or rigor; teaches the interviewer something or surfaces tradeoffs unprompted.
+- **at-bar** — meets expectations for the level: complete, accurate, role-appropriate; addresses the question with adequate specificity.
+- **below-bar** — falls short for the level: vague, incomplete, off-topic, factually wrong, or reveals a gap that matters at this level.
+
+After all question blocks, include 1–3 **notable quotes** — short verbatim excerpts that are particularly revealing (positive or negative). Cite the question number each quote came from.
 
 ### 3. Questions Asked by the Candidate
 
@@ -121,7 +158,7 @@ Work through the materials in this order before writing anything.
    - Confirm or contradict every concrete claim made in the interview against the resume.
    - Flag discrepancies (e.g., resume says "led team of 8", transcript says "supported a team of 8").
    - Surface resume accomplishments that were well-articulated in the interview (a positive signal).
-4. **Score each answer.** Assign Strong / Adequate / Weak using the criteria above. Be consistent — the same standard for all candidates.
+4. **Rate each answer.** Assign `below-bar` / `at-bar` / `above-bar` using the definitions in section 2. The bar is the role's level — be explicit about which level you are calibrating against, and apply the same standard to every candidate at that level.
 5. **Aggregate signals** into the five evaluation dimensions:
    - **Technical / functional skills** — depth, problem-solving approach, ability to explain.
    - **Experience & background** — relevance of past roles, scope/impact, career trajectory.

@@ -25,7 +25,7 @@ LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build install sync doctor fmt lint test test-unit test-integration ci check clean dev tzcli
+.PHONY: help build install sync doctor fmt lint test test-unit test-integration ci check clean dev tzcli agent
 
 # ---------------------------------------------------------------------------
 # Help
@@ -38,6 +38,7 @@ help:
 	@echo "  make sync               Render shared/ + overrides/ into .cursor, .claude, .codex"
 	@echo "  make install            Install rendered trees into ~/.cursor, ~/.claude, ~/.codex"
 	@echo "  make doctor             Print environment + drift report"
+	@echo "  make agent              Launch Cursor CLI (agent) in this workspace"
 	@echo ""
 	@echo "Validation:"
 	@echo "  make fmt                gofmt -w; goimports if available"
@@ -71,6 +72,20 @@ doctor: $(TZCLI)
 
 dev: $(TZCLI)
 	$(TZCLI) sync --check
+
+# Launch the Cursor CLI (`agent` / `cursor-agent`) bound to this repo so
+# that `tz-*` slash commands and Skills rendered by `tzcli install` are
+# discovered. Requires the Cursor CLI to be installed (see `make doctor`)
+# and authenticated (`agent login` or `CURSOR_API_KEY`).
+agent:
+	@if command -v agent >/dev/null 2>&1; then \
+		agent --workspace $(CURDIR); \
+	elif command -v cursor-agent >/dev/null 2>&1; then \
+		cursor-agent --workspace $(CURDIR); \
+	else \
+		echo "Cursor CLI not found. Install with: curl https://cursor.com/install -fsS | bash"; \
+		exit 127; \
+	fi
 
 # ---------------------------------------------------------------------------
 # Format / lint / test
