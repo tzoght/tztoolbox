@@ -97,6 +97,43 @@ Default key bindings:
 
 History is stored at `${TZCLI_HISTORY_FILE}` if set, otherwise `${XDG_CONFIG_HOME:-~/.config}/tzcli/history`. Each REPL invocation builds a fresh Cobra command tree so flag state never leaks between commands.
 
+## Use from the Cursor CLI
+
+Once `tzcli install` has populated `~/.cursor/commands/` and `~/.cursor/skills/`, the same `tz-*` slash commands and Skills are usable from a terminal via the [Cursor CLI](https://cursor.com/docs/cli/installation) — no IDE required.
+
+Install and authenticate the CLI once:
+
+```bash
+curl https://cursor.com/install -fsS | bash   # installs `agent` (alias: `cursor-agent`)
+agent login                                   # or: export CURSOR_API_KEY=...
+agent status                                  # confirm logged in
+```
+
+`tzcli doctor` reports whether the CLI is on PATH (under the `helpers` table as `cursor-agent`).
+
+From the repo root, launch the agent and slash commands plus skills auto-load:
+
+```bash
+make agent              # = agent --workspace $(pwd)
+agent                   # interactive REPL; type "/" to see tz-* commands
+```
+
+Common invocation patterns:
+
+| Goal | Command |
+| --- | --- |
+| Interactive REPL with discovery | `agent` |
+| Pre-seed a slash command | `agent "/tz-pr-fix"` |
+| Headless, propose only | `agent -p "/tz-pr-fix"` |
+| Headless, actually apply edits/commits | `agent -p --force "/tz-pr-fix"` |
+| Read-only Q&A (no edits) | `agent -p --mode ask "what skills are loaded?"` |
+| Machine-readable output | `agent -p --output-format json "/tz-pr-fix"` |
+| Set workspace from anywhere | `agent --workspace /path/to/repo "/tz-pr-fix"` |
+| Pick a model | `agent --model auto "/tz-pr-fix"` |
+| Resume last chat | `agent --continue` |
+
+Gotcha: `-p` / `--print` only **proposes** changes. For commands that mutate state (commit, push, branch ops) you must also pass `--force` (alias: `--yolo`). See the [headless docs](https://cursor.com/docs/cli/headless).
+
 ## Adding goodies
 
 | Kind | Source location | Cursor | Claude | Codex |

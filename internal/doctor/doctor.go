@@ -71,6 +71,10 @@ func Run(root string) (Report, error) {
 	rep.Helpers["op"] = lookupHelper("op", "--version")
 	rep.Helpers["go"] = lookupHelper("go", "version")
 	rep.Helpers["git"] = lookupHelper("git", "--version")
+	// cursor-agent is the Cursor CLI binary (`agent` / `cursor-agent`).
+	// When present, the same shared/ commands and skills tzcli renders
+	// into ~/.cursor/ are usable from a terminal via `agent` outside the IDE.
+	rep.Helpers["cursor-agent"] = lookupHelper("cursor-agent", "--version")
 
 	drift, err := render.CheckDrift(root, model.AllTools)
 	if err == nil {
